@@ -11,3 +11,7 @@ variable "admin_user" {
 variable "admin_password" {
   description = "Default password for admin account"
 }
+
+variable "aws_address" {
+  description = "Address to the AWS loadbalancer"
+}

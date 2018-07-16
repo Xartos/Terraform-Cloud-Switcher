@@ -24,7 +24,7 @@ resource "azurerm_public_ip" "tcspubip" {
   location                     = "${azurerm_resource_group.tcsgrp.location}"
   resource_group_name          = "${azurerm_resource_group.tcsgrp.name}"
   public_ip_address_allocation = "static"
-  domain_name_label            = "tcsgrouptwo"
+  domain_name_label            = "tcsgroup"
 
   tags {
     environment = "staging"
@@ -190,4 +190,40 @@ resource "azurerm_virtual_machine_scale_set" "tcsvmss" {
         }
       SETTINGS
   }
+}
+
+resource "azurerm_traffic_manager_profile" "tcstrcmng" {
+  name                = "TestTCSTrafficManager"
+  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
+
+  traffic_routing_method = "Weighted"
+
+  dns_config {
+    relative_name = "testtcstrafficmanager"
+    ttl           = 30
+  }
+
+  monitor_config {
+    protocol = "http"
+    port     = 80
+    path     = "/"
+  }
+}
+
+resource "azurerm_traffic_manager_endpoint" "tcstfcmngendaws" {
+  name                = "AWSEnd"
+  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
+  profile_name        = "${azurerm_traffic_manager_profile.tcstrcmng.name}"
+  target              = "${var.aws_address}"
+  type                = "externalEndpoints"
+  weight              = 1
+}
+
+resource "azurerm_traffic_manager_endpoint" "tcstfcmngendazure" {
+  name                = "AzureEnd"
+  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
+  profile_name        = "${azurerm_traffic_manager_profile.tcstrcmng.name}"
+  target_resource_id  = "${azurerm_public_ip.tcspubip.id}"
+  type                = "azureEndpoints"
+  weight              = 1
 }
