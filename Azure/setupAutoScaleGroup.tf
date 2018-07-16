@@ -210,20 +210,20 @@ resource "azurerm_traffic_manager_profile" "tcstrcmng" {
   }
 }
 
-resource "azurerm_traffic_manager_endpoint" "tcstfcmngendaws" {
-  name                = "AWSEnd"
-  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
-  profile_name        = "${azurerm_traffic_manager_profile.tcstrcmng.name}"
-  target              = "${var.aws_address}"
-  type                = "externalEndpoints"
-  weight              = 1
-}
-
 resource "azurerm_traffic_manager_endpoint" "tcstfcmngendazure" {
   name                = "AzureEnd"
   resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
   profile_name        = "${azurerm_traffic_manager_profile.tcstrcmng.name}"
-  target_resource_id  = "${azurerm_public_ip.tcspubip.id}"
-  type                = "azureEndpoints"
-  weight              = 1
+  type                = "externalEndpoints"                                 # Uses external because azureEndpoints doenst work
+  target              = "${azurerm_public_ip.tcspubip.fqdn}"
+  weight              = 100
+}
+
+resource "azurerm_traffic_manager_endpoint" "tcstfcmngendaws" {
+  name                = "AWSEnd"
+  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
+  profile_name        = "${azurerm_traffic_manager_profile.tcstrcmng.name}"
+  type                = "externalEndpoints"
+  target              = "${var.aws_address}"
+  weight              = 100
 }
