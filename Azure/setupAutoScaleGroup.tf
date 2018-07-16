@@ -186,7 +186,7 @@ resource "azurerm_virtual_machine_scale_set" "tcsvmss" {
 
     settings = <<SETTINGS
         {
-          "commandToExecute": "mkdir -p /var/www/html/ && echo \"Hello world from $(hostname)\" > /var/www/html/index.html"
+          "commandToExecute": "mkdir -p /var/www/html/ && echo \"Hello world! My name is $(hostname)\" > /var/www/html/index.html"
         }
       SETTINGS
   }
