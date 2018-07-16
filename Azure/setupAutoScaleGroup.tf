@@ -1,58 +1,58 @@
 provider "azurerm" {}
 
-resource "azurerm_resource_group" "test" {
+resource "azurerm_resource_group" "tcsgrp" {
   name     = "testTCSGroup"
   location = "North Europe"
 }
 
-resource "azurerm_virtual_network" "test" {
+resource "azurerm_virtual_network" "tcsvirtnet" {
   name                = "testTCSVirtualNetwork"
   address_space       = ["10.0.0.0/16"]
-  location            = "${azurerm_resource_group.test.location}"
-  resource_group_name = "${azurerm_resource_group.test.name}"
+  location            = "${azurerm_resource_group.tcsgrp.location}"
+  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
 }
 
-resource "azurerm_subnet" "test" {
+resource "azurerm_subnet" "tcssubnet" {
   name                 = "testTCSSubNet"
-  resource_group_name  = "${azurerm_resource_group.test.name}"
-  virtual_network_name = "${azurerm_virtual_network.test.name}"
+  resource_group_name  = "${azurerm_resource_group.tcsgrp.name}"
+  virtual_network_name = "${azurerm_virtual_network.tcsvirtnet.name}"
   address_prefix       = "10.0.2.0/24"
 }
 
-resource "azurerm_public_ip" "test" {
+resource "azurerm_public_ip" "tcspubip" {
   name                         = "testTCSPIP"
-  location                     = "${azurerm_resource_group.test.location}"
-  resource_group_name          = "${azurerm_resource_group.test.name}"
+  location                     = "${azurerm_resource_group.tcsgrp.location}"
+  resource_group_name          = "${azurerm_resource_group.tcsgrp.name}"
   public_ip_address_allocation = "static"
-  domain_name_label            = "tcsgroup"
+  domain_name_label            = "tcsgrouptwo"
 
   tags {
     environment = "staging"
   }
 }
 
-resource "azurerm_lb" "test" {
+resource "azurerm_lb" "tcslb" {
   name                = "testTCSLoadBalancer"
-  location            = "${azurerm_resource_group.test.location}"
-  resource_group_name = "${azurerm_resource_group.test.name}"
+  location            = "${azurerm_resource_group.tcsgrp.location}"
+  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
 
   frontend_ip_configuration {
     name                 = "PublicIPAddress"
-    public_ip_address_id = "${azurerm_public_ip.test.id}"
+    public_ip_address_id = "${azurerm_public_ip.tcspubip.id}"
   }
 }
 
-resource "azurerm_lb_backend_address_pool" "bpepool" {
-  resource_group_name = "${azurerm_resource_group.test.name}"
-  loadbalancer_id     = "${azurerm_lb.test.id}"
+resource "azurerm_lb_backend_address_pool" "tcslbbckadrpool" {
+  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
+  loadbalancer_id     = "${azurerm_lb.tcslb.id}"
   name                = "BackEndAddressPool"
 }
 
-resource "azurerm_lb_nat_pool" "lbnatpool" {
+resource "azurerm_lb_nat_pool" "tcslbnatpool" {
   count                          = 2
-  resource_group_name            = "${azurerm_resource_group.test.name}"
+  resource_group_name            = "${azurerm_resource_group.tcsgrp.name}"
   name                           = "ssh"
-  loadbalancer_id                = "${azurerm_lb.test.id}"
+  loadbalancer_id                = "${azurerm_lb.tcslb.id}"
   protocol                       = "Tcp"
   frontend_port_start            = 50000
   frontend_port_end              = 50119
@@ -60,31 +60,33 @@ resource "azurerm_lb_nat_pool" "lbnatpool" {
   frontend_ip_configuration_name = "PublicIPAddress"
 }
 
-resource "azurerm_lb_probe" "test" {
-  resource_group_name = "${azurerm_resource_group.test.name}"
-  loadbalancer_id     = "${azurerm_lb.test.id}"
+resource "azurerm_lb_probe" "tcslbprobe" {
+  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
+  loadbalancer_id     = "${azurerm_lb.tcslb.id}"
   name                = "http-running-probe"
   protocol            = "HTTP"
   port                = 80
+  request_path        = "/"
 }
 
-resource "azurerm_lb_rule" "test" {
-  resource_group_name            = "${azurerm_resource_group.test.name}"
-  loadbalancer_id                = "${azurerm_lb.test.id}"
+resource "azurerm_lb_rule" "tcslbrule" {
+  resource_group_name            = "${azurerm_resource_group.tcsgrp.name}"
+  loadbalancer_id                = "${azurerm_lb.tcslb.id}"
   name                           = "HTTPrule"
   protocol                       = "Tcp"
   frontend_port                  = 80
   backend_port                   = 80
   frontend_ip_configuration_name = "PublicIPAddress"
-  probe_id                       = "${azurerm_lb_probe.test.id}"
+  backend_address_pool_id        = "${azurerm_lb_backend_address_pool.tcslbbckadrpool.id}"
+  probe_id                       = "${azurerm_lb_probe.tcslbprobe.id}"
 }
 
 #################################### Network security group and rules
 
-resource "azurerm_network_security_group" "test" {
+resource "azurerm_network_security_group" "tcsnetsecgrp" {
   name                = "testTCSSecurityGroup"
-  location            = "${azurerm_resource_group.test.location}"
-  resource_group_name = "${azurerm_resource_group.test.name}"
+  location            = "${azurerm_resource_group.tcsgrp.location}"
+  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
 }
 
 resource "azurerm_network_security_rule" "allowSSH" {
@@ -97,8 +99,8 @@ resource "azurerm_network_security_rule" "allowSSH" {
   destination_port_range      = "22"
   source_address_prefix       = "Internet"
   destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.test.name}"
-  network_security_group_name = "${azurerm_network_security_group.test.name}"
+  resource_group_name         = "${azurerm_resource_group.tcsgrp.name}"
+  network_security_group_name = "${azurerm_network_security_group.tcsnetsecgrp.name}"
 }
 
 resource "azurerm_network_security_rule" "allowHTTP" {
@@ -111,14 +113,14 @@ resource "azurerm_network_security_rule" "allowHTTP" {
   destination_port_range      = "80"
   source_address_prefix       = "Internet"
   destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.test.name}"
-  network_security_group_name = "${azurerm_network_security_group.test.name}"
+  resource_group_name         = "${azurerm_resource_group.tcsgrp.name}"
+  network_security_group_name = "${azurerm_network_security_group.tcsnetsecgrp.name}"
 }
 
-resource "azurerm_virtual_machine_scale_set" "test" {
-  name                = "testTCSScaleSet-1"
-  location            = "${azurerm_resource_group.test.location}"
-  resource_group_name = "${azurerm_resource_group.test.name}"
+resource "azurerm_virtual_machine_scale_set" "tcsvmss" {
+  name                = "testTCSScaleSet"
+  location            = "${azurerm_resource_group.tcsgrp.location}"
+  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
   upgrade_policy_mode = "Manual"
 
   sku {
@@ -149,9 +151,9 @@ resource "azurerm_virtual_machine_scale_set" "test" {
   }
 
   os_profile {
-    computer_name_prefix = "testvm"
-    admin_username       = "myadmin"
-    admin_password       = "testTCSPassword"
+    computer_name_prefix = "azuretestvm"
+    admin_username       = "${var.admin_user}"
+    admin_password       = "${var.admin_password}"
     custom_data          = "${file("web.conf")}"
   }
 
@@ -170,21 +172,22 @@ resource "azurerm_virtual_machine_scale_set" "test" {
 
     ip_configuration {
       name                                   = "TestIPConfiguration"
-      subnet_id                              = "${azurerm_subnet.test.id}"
-      load_balancer_backend_address_pool_ids = ["${azurerm_lb_backend_address_pool.bpepool.id}"]
-      load_balancer_inbound_nat_rules_ids    = ["${element(azurerm_lb_nat_pool.lbnatpool.*.id, count.index)}"]
+      subnet_id                              = "${azurerm_subnet.tcssubnet.id}"
+      load_balancer_backend_address_pool_ids = ["${azurerm_lb_backend_address_pool.tcslbbckadrpool.id}"]
+      load_balancer_inbound_nat_rules_ids    = ["${element(azurerm_lb_nat_pool.tcslbnatpool.*.id, count.index)}"]
     }
   }
 
-  provisioner "file" {
-    source      = "installNginx.sh"
-    destination = "/home/myadmin/installNginx.sh"
-  }
+  extension {
+    name                 = "customScript"
+    publisher            = "Microsoft.Azure.Extensions"
+    type                 = "CustomScript"
+    type_handler_version = "2.0"
 
-  provisioner "remote-exec" {
-    inline = [
-      "chmod +x /home/myadmin/installNginx.sh",
-      "/home/myadmin/installNginx.sh",
-    ]
+    settings = <<SETTINGS
+        {
+          "commandToExecute": "mkdir -p /var/www/html/ && echo \"Hello world from $(hostname)\" > /var/www/html/index.html"
+        }
+      SETTINGS
   }
 }
