@@ -1,7 +1,3 @@
-variable "hosted_zone" {
-  description = "Hosted zone used by Route53 (e.g. example.com)"
-}
-
 data "aws_route53_zone" "primary" {
   name         = "${var.hosted_zone}"
   private_zone = false
@@ -19,8 +15,4 @@ resource "aws_route53_record" "tf" {
 
   set_identifier = "tf"
   records        = ["${aws_elb.my_elb.dns_name}"]
-}
-
-output "route53_fqdn" {
-  value = "${aws_route53_record.tf.fqdn}"
 }

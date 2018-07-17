@@ -2,16 +2,6 @@ provider "aws" {
   region = "eu-west-3"
 }
 
-variable "group_size" {
-  description = "Number of VMs in the cloudpool"
-  default     = 2
-}
-
-variable "server_port" {
-  description = "Server HTTP request port"
-  default     = 80
-}
-
 data "aws_availability_zones" "available" {}
 
 resource "aws_launch_configuration" "my_launch_configuration" {
@@ -98,8 +88,4 @@ resource "aws_elb" "my_elb" {
     instance_port     = "${var.server_port}"
     instance_protocol = "http"
   }
-}
-
-output "elb_dns_name" {
-  value = "${aws_elb.my_elb.dns_name}"
 }
