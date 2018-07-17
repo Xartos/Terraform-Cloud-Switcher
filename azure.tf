@@ -126,7 +126,7 @@ resource "azurerm_virtual_machine_scale_set" "tcsvmss" {
   sku {
     name     = "Standard_A0"
     tier     = "Standard"
-    capacity = 2
+    capacity = "${var.azure_capacity}"
   }
 
   storage_profile_image_reference {
@@ -192,38 +192,39 @@ resource "azurerm_virtual_machine_scale_set" "tcsvmss" {
   }
 }
 
-resource "azurerm_traffic_manager_profile" "tcstrcmng" {
-  name                = "TestTCSTrafficManager"
-  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
+# resource "azurerm_traffic_manager_profile" "tcstrcmng" {
+#   name                = "TestTCSTrafficManager"
+#   resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
+# 
+#   traffic_routing_method = "Weighted"
+# 
+#   dns_config {
+#     relative_name = "testtcstrafficmanager"
+#     ttl           = 30
+#   }
+# 
+#   monitor_config {
+#     protocol = "http"
+#     port     = 80
+#     path     = "/"
+#   }
+# }
+# 
+# resource "azurerm_traffic_manager_endpoint" "tcstfcmngendazure" {
+#   name                = "AzureEnd"
+#   resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
+#   profile_name        = "${azurerm_traffic_manager_profile.tcstrcmng.name}"
+#   type                = "externalEndpoints"                                 # Uses external because azureEndpoints doenst work
+#   target              = "${azurerm_public_ip.tcspubip.fqdn}"
+#   weight              = 100
+# }
+# 
+# resource "azurerm_traffic_manager_endpoint" "tcstfcmngendaws" {
+#   name                = "AWSEnd"
+#   resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
+#   profile_name        = "${azurerm_traffic_manager_profile.tcstrcmng.name}"
+#   type                = "externalEndpoints"
+#   target              = "${var.aws_address}"
+#   weight              = 100
+# }
 
-  traffic_routing_method = "Weighted"
-
-  dns_config {
-    relative_name = "testtcstrafficmanager"
-    ttl           = 30
-  }
-
-  monitor_config {
-    protocol = "http"
-    port     = 80
-    path     = "/"
-  }
-}
-
-resource "azurerm_traffic_manager_endpoint" "tcstfcmngendazure" {
-  name                = "AzureEnd"
-  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
-  profile_name        = "${azurerm_traffic_manager_profile.tcstrcmng.name}"
-  type                = "externalEndpoints"                                 # Uses external because azureEndpoints doenst work
-  target              = "${azurerm_public_ip.tcspubip.fqdn}"
-  weight              = 100
-}
-
-resource "azurerm_traffic_manager_endpoint" "tcstfcmngendaws" {
-  name                = "AWSEnd"
-  resource_group_name = "${azurerm_resource_group.tcsgrp.name}"
-  profile_name        = "${azurerm_traffic_manager_profile.tcstrcmng.name}"
-  type                = "externalEndpoints"
-  target              = "${var.aws_address}"
-  weight              = 100
-}

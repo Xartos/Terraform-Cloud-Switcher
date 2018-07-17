@@ -22,8 +22,8 @@ resource "aws_launch_configuration" "my_launch_configuration" {
 
 resource "aws_autoscaling_group" "my_autoscaling_group" {
   launch_configuration = "${aws_launch_configuration.my_launch_configuration.id}"
-  min_size             = "${var.group_size}"
-  max_size             = "${var.group_size}"
+  min_size             = "${var.aws_capacity}"
+  max_size             = "${var.aws_capacity}"
   availability_zones   = ["${data.aws_availability_zones.available.names}"]
 
   load_balancers    = ["${aws_elb.my_elb.name}"]
